@@ -5,12 +5,14 @@ var CordovaExif = (function () {
 	FileHandle = {
 		url: null,
 		callback: null,
+		callbackFail: null,
 		getExif: false,
 
-		setup: function(imageURI, callback, getExif) {
+		setup: function(imageURI, callback, callbackFail, getExif) {
 			FileHandle.url = imageURI;
 			FileHandle.callback = callback;
-
+			FileHandle.callbackFail = (callbackFail) ? callbackFail : {};
+			
 			if(getExif){
 				FileHandle.getExif = getExif;
 			}
@@ -18,12 +20,12 @@ var CordovaExif = (function () {
 			window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, FileHandle.gotFS, FileHandle.fail);
 		},
 
-		readData: function(imageURI, callback){
-			FileHandle.setup(imageURI, callback, true);
+		readData: function(imageURI, callback, callbackFail){
+			FileHandle.setup(imageURI, callback, callbackFail, true);
 		},
 
-		readBase64: function(imageURI, callback){
-			FileHandle.setup(imageURI, callback, false);
+		readBase64: function(imageURI, callback, callbackFail){
+			FileHandle.setup(imageURI, callback, callbackFail, false);
 		},
 
 		gotFS: function(fileSystem) {
@@ -36,6 +38,7 @@ var CordovaExif = (function () {
 
 		fail: function(error) {
 			// error.code
+			FileHandle.callbackFail(error);
 		},
 
 		readFile: function(file){
@@ -58,8 +61,14 @@ var CordovaExif = (function () {
 		},
 
 		handleBinaryImage: function(binaryImage){
+			var returnObject = new Object();
 			var exifObject = Exif.find(binaryImage);
-			FileHandle.callback(exifObject);
+			var xmpObject = XMP.find(binaryImage);
+			if (exifObject)
+				Object.defineProperty(returnObject,"exif",exifObject);
+			if (xmpObject)
+				Object.defineProperty(returnObject,"xmp",xmpObject);
+			FileHandle.callback(returnObject);
 		}
 	};
 
@@ -587,6 +596,51 @@ var CordovaExif = (function () {
 			0x001C: 'GPSAreaInformation',
 			0x001D: 'GPSDateStamp',
 			0x001E: 'GPSDifferential'
+		}
+	};
+
+	XMP = {
+		find: function(image){
+			// Check if is a valid JPEG
+			if (image.getByteAt(0) !== 0xFF || image.getByteAt(1) !== 0xD8) return false;
+
+			var offset = 2,
+				xmpData = [];
+			while (offset < image.length) {
+				if (image.getByteAt(offset) === 0xFF) {
+					// Check if is a XMP marker
+					if (image.getByteAt(offset + 1) === 0xE1) {
+						// Check if is a valid XMP data
+						var start = offset + 4;
+						if (image.getStringAt(start, 28) === 'http://ns.adobe.com/xap/1.0/') {
+							var data = XMP.read(image, start);
+							xmpData.push(data);
+						}
+						++offset;
+					} else {
+						offset += 2;
+					}
+				} else ++offset;
+			}
+			return (xmpData.length > 0) ? xmpData : false;
+		},
+
+		read: function(image, start){
+
+			var xmpData,
+				xmpStart = start + 30,
+				xmpOffset = start + 30,
+				xmpEof;
+
+			while (xmpOffset < image.length) {
+				if (image.getStringAt(xmpOffset, 12) === '</x:xmpmeta>') {
+					xmpEof = xmpOffset + 12;
+					xmpData = image.getStringAt(xmpStart, xmpEof);
+					break;
+				} else ++xmpOffset;
+			}
+
+			return xmpData;
 		}
 	};
 
