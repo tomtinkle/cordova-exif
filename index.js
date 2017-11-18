@@ -640,7 +640,17 @@ var CordovaExif = (function () {
 				} else ++xmpOffset;
 			}
 
-			return xmpData;
+			// replace unnecessary tags
+	        xmpData = xmpData.replace(/<\?xpacket\s*begin="\?"[^\?]+\?>/, '<?xml version="1.0" encoding="UTF-8"?>');
+	        xmpData = xmpData.replace(/<x:xmpmeta[^>]+>/, '');
+	        xmpData = xmpData.replace(/<\/x:xmpmeta>/, '');
+	        xmpData = xmpData.replace(/"xmlns:/g, '" xmlns:');
+
+			// parse xml
+			var parser = new DOMParser();
+	        var domData = parser.parseFromString(xmpData, 'text/xml');
+
+			return domData;
 		}
 	};
 
