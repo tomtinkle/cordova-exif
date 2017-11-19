@@ -628,8 +628,8 @@ var CordovaExif = (function () {
 		read: function(image, start){
 
 			var xmpData,
-				xmpStart = start + 30,
-				xmpOffset = start + 30,
+				xmpStart = start + 29,
+				xmpOffset = start + 29,
 				xmpEof;
 
 			while (xmpOffset < image.length) {
@@ -641,7 +641,7 @@ var CordovaExif = (function () {
 			}
 
 			// replace unnecessary tags
-	        xmpData = xmpData.replace(/<\?xpacket\s*begin="\?"[^\?]+\?>/, '<?xml version="1.0" encoding="UTF-8"?>');
+	        xmpData = xmpData.replace(/<\?xpacket[^>]+>/, '<?xml version="1.0" encoding="UTF-8"?>');
 	        xmpData = xmpData.replace(/<x:xmpmeta[^>]+>/, '');
 	        xmpData = xmpData.replace(/<\/x:xmpmeta>/, '');
 	        xmpData = xmpData.replace(/"xmlns:/g, '" xmlns:');
