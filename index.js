@@ -5,12 +5,14 @@ var CordovaExif = (function () {
 	FileHandle = {
 		url: null,
 		callback: null,
+		callbackFail: null,
 		getExif: false,
 
-		setup: function(imageURI, callback, getExif) {
+		setup: function(imageURI, callback, callbackFail, getExif) {
 			FileHandle.url = imageURI;
 			FileHandle.callback = callback;
-
+			FileHandle.callbackFail = (callbackFail) ? callbackFail : {};
+			
 			if(getExif){
 				FileHandle.getExif = getExif;
 			}
@@ -18,12 +20,12 @@ var CordovaExif = (function () {
 			window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, FileHandle.gotFS, FileHandle.fail);
 		},
 
-		readData: function(imageURI, callback){
-			FileHandle.setup(imageURI, callback, true);
+		readData: function(imageURI, callback, callbackFail){
+			FileHandle.setup(imageURI, callback, callbackFail, true);
 		},
 
-		readBase64: function(imageURI, callback){
-			FileHandle.setup(imageURI, callback, false);
+		readBase64: function(imageURI, callback, callbackFail){
+			FileHandle.setup(imageURI, callback, callbackFail, false);
 		},
 
 		gotFS: function(fileSystem) {
@@ -36,6 +38,7 @@ var CordovaExif = (function () {
 
 		fail: function(error) {
 			// error.code
+			FileHandle.callbackFail(error);
 		},
 
 		readFile: function(file){
@@ -58,8 +61,14 @@ var CordovaExif = (function () {
 		},
 
 		handleBinaryImage: function(binaryImage){
+			var returnObject = new Object();
 			var exifObject = Exif.find(binaryImage);
-			FileHandle.callback(exifObject);
+			var xmpObject = XMP.find(binaryImage);
+			if (exifObject)
+				returnObject.exif = exifObject;
+			if (xmpObject)
+				returnObject.xmp = xmpObject;
+			FileHandle.callback(returnObject);
 		}
 	};
 
@@ -587,6 +596,70 @@ var CordovaExif = (function () {
 			0x001C: 'GPSAreaInformation',
 			0x001D: 'GPSDateStamp',
 			0x001E: 'GPSDifferential'
+		}
+	};
+
+	XMP = {
+		find: function(image){
+			// Check if is a valid JPEG
+			if (image.getByteAt(0) !== 0xFF || image.getByteAt(1) !== 0xD8) return false;
+
+			var offset = 2,
+				xmpData = [];
+			while (offset < image.length) {
+				if (image.getByteAt(offset) === 0xFF) {
+					// Check if is a XMP marker
+					if (image.getByteAt(offset + 1) === 0xE1) {
+						// Check if is a valid XMP data
+						var start = offset + 4;
+						if (image.getStringAt(start, 28) === 'http://ns.adobe.com/xap/1.0/') {
+							var data = XMP.read(image, start);
+							xmpData.push(data);
+						}
+						++offset;
+					} else {
+						offset += 2;
+					}
+				} else ++offset;
+			}
+			return (xmpData.length > 0) ? xmpData : false;
+		},
+
+		read: function(image, start){
+
+			var xmpResult = {},
+				xmpData = '',
+				xmpStart = start + 29,
+				xmpOffset = start + 29;
+
+			while (xmpOffset < image.length) {
+				if (image.getStringAt(xmpOffset, 12) === '</x:xmpmeta>') {
+					var xmpEof = xmpOffset + 12;
+					var bytesLength = xmpEof - xmpStart;
+					xmpData = image.getStringAt(xmpStart, bytesLength);
+					break;
+				} else ++xmpOffset;
+			}
+
+			// xml data repair
+			xmpData = xmpData.replace(/"xmlns:/g, '" xmlns:');
+			xmpData = xmpData.replace(/\n/g, '');
+
+			// replace xpacket to xml tag
+			var repXmpData = xmpData.replace(/<\?xpacket[^>]+>/, '<?xml version="1.0" encoding="UTF-8"?>');
+			// replace unnecessary tags
+			// repXmpData = repXmpData.replace(/<x:xmpmeta[^>]+>/, '');
+			// repXmpData = repXmpData.replace(/<\/x:xmpmeta>/, '');
+
+			// parse xml
+			var parser = new DOMParser();
+			var domData = parser.parseFromString(repXmpData, 'text/xml');
+
+			xmpResult.origin = xmpData;
+			xmpResult.xml = repXmpData;
+			xmpResult.dom = domData;
+
+			return xmpResult;
 		}
 	};
 
