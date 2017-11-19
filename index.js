@@ -642,22 +642,22 @@ var CordovaExif = (function () {
 			}
 
 			// xml data repair
-	        xmpData = xmpData.replace(/"xmlns:/g, '" xmlns:');
-	        xmpData = xmpData.replace(/\n/g, '');
+			xmpData = xmpData.replace(/"xmlns:/g, '" xmlns:');
+			xmpData = xmpData.replace(/\n/g, '');
 
 			// replace xpacket to xml tag
-	        var repXmpData = xmpData.replace(/<\?xpacket[^>]+>/, '<?xml version="1.0" encoding="UTF-8"?>');
+			var repXmpData = xmpData.replace(/<\?xpacket[^>]+>/, '<?xml version="1.0" encoding="UTF-8"?>');
 			// replace unnecessary tags
-	        // repXmpData = repXmpData.replace(/<x:xmpmeta[^>]+>/, '');
-	        // repXmpData = repXmpData.replace(/<\/x:xmpmeta>/, '');
+			// repXmpData = repXmpData.replace(/<x:xmpmeta[^>]+>/, '');
+			// repXmpData = repXmpData.replace(/<\/x:xmpmeta>/, '');
 
 			// parse xml
 			var parser = new DOMParser();
-	        var domData = parser.parseFromString(repXmpData, 'text/xml');
+			var domData = parser.parseFromString(repXmpData, 'text/xml');
 
-	        xmpResult.origin = xmpData;
-	        xmpResult.xml = repXmpData;
-	        xmpResult.dom = domData;
+			xmpResult.origin = xmpData;
+			xmpResult.xml = repXmpData;
+			xmpResult.dom = domData;
 
 			return xmpResult;
 		}
