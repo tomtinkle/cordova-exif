@@ -1,20 +1,28 @@
-# Cordova Exif
+# Cordova Exif with XMP
 
-This plugin, is the simplest way to get exif data of images at Cordova platform (Phonegap)
+This plugin, is the simplest way to get exif data and xmp data of images at Cordova platform (Phonegap)
 
 ## Getting Started
 
 ### Installing
 
-	cordova plugin add https://github.com/domax/cordova-exif.git --save
+	cordova plugin add https://github.com/tomtinkle/cordova-exif.git --save
 
 ### Usage
 
-Pass imageURI and get the object with EXIF information
+Pass imageURI and get the object with EXIF and XMP information
 
 ```javascript
-CordovaExif.readData(imageURI, function(exifObject) {
-  console.log(exifObject);
+CordovaExif.readData(imageURI, function(resultObject) {
+  // get exif data
+  console.log(resultObject.exif);
+  // get xmp data (array)
+  var xmparr = resultObject.xmp;
+  for (var i = 0; i &lt; xmparr.length; i++) {
+    console.log(xmparr[i].origin); // xmp origin data
+    console.log(xmparr[i].xml);    // convert xml data
+    console.log(xmparr[i].dom);    // parse dom data
+  }
 });
 ```
 
@@ -33,7 +41,6 @@ If you want know more about technical information, see these links:
 - [Exif Standard 2.2](http://www.kodak.com/global/plugins/acrobat/en/service/digCam/exifStandard2.pdf)
 - [Description of Exif file format](http://www.media.mit.edu/pia/Research/deepview/exif.html)
 - [Exif Tags](http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html)
-
 
 ## Example of Exif Data on photo
 
@@ -63,6 +70,15 @@ If you want know more about technical information, see these links:
 | This is just somes examples, has much more informations. | ... |
 
 
+## What is XMP?
+The Extensible Metadata Platform (XMP) is an ISO standard, originally created by Adobe Systems Inc., for the creation, processing and interchange of standardized and custom metadata for digital documents and data sets.
+
+XMP standardizes a data model, a serialization format and core properties for the definition and processing of extensible metadata. It also provides guidelines for embedding XMP information into popular image, video and document file formats, such as JPEG and PDF, without breaking their readability by applications that do not support XMP. Therefore, the non-XMP metadata have to be reconciled with the XMP properties. Although metadata can alternatively be stored in a sidecar file, embedding metadata avoids problems that occur when metadata is stored separately.
+
+This was quoted from [wikipedia](https://en.wikipedia.org/wiki/Extensible_Metadata_Platform).
+
+
+
 ## Complete Example
 
 This example show how its simple get exif information of photo taken by a smartphone.
@@ -75,8 +91,16 @@ var options = {
 };
 
 function onSuccess(imageURI) {
-	CordovaExif.readData(imageURI, function(exifObject) {
-		console.log(exifObject);
+	CordovaExif.readData(imageURI, function(resultObject) {
+		// get exif data
+		console.log(resultObject.exif);
+		// get xmp data (array)
+		var xmparr = resultObject.xmp;
+		for (var i = 0; i &lt; xmparr.length; i++) {
+			console.log(xmparr[i].origin); // xmp origin data
+			console.log(xmparr[i].xml);    // convert xml data
+			console.log(xmparr[i].dom);    // parse dom data
+		}
 	});
 };
 
@@ -89,8 +113,5 @@ navigator.camera.getPicture(onSuccess, onFail, options);
 
 ## About
 
-#### Who?
-Created by [Guilherme Farias](http://guilhermefarias.com/), a web developer from Brazil.
-
 #### License?
-Cordova Exif is released under the terms of the [MIT license](https://github.com/guilhermefarias/CordovaExif/blob/master/MIT-LICENSE).
+Cordova Exif is released under the terms of the [MIT license](https://github.com/tomtinkle/cordova-exif/blob/master/MIT-LICENSE).

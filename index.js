@@ -65,9 +65,9 @@ var CordovaExif = (function () {
 			var exifObject = Exif.find(binaryImage);
 			var xmpObject = XMP.find(binaryImage);
 			if (exifObject)
-				Object.defineProperty(returnObject,"exif",exifObject);
+				returnObject.exif = exifObject;
 			if (xmpObject)
-				Object.defineProperty(returnObject,"xmp",xmpObject);
+				returnObject.xmp = xmpObject;
 			FileHandle.callback(returnObject);
 		}
 	};
@@ -627,30 +627,39 @@ var CordovaExif = (function () {
 
 		read: function(image, start){
 
-			var xmpData,
+			var xmpResult = {},
+				xmpData = '',
 				xmpStart = start + 29,
-				xmpOffset = start + 29,
-				xmpEof;
+				xmpOffset = start + 29;
 
 			while (xmpOffset < image.length) {
 				if (image.getStringAt(xmpOffset, 12) === '</x:xmpmeta>') {
-					xmpEof = xmpOffset + 12;
-					xmpData = image.getStringAt(xmpStart, xmpEof);
+					var xmpEof = xmpOffset + 12;
+					var bytesLength = xmpEof - xmpStart;
+					xmpData = image.getStringAt(xmpStart, bytesLength);
 					break;
 				} else ++xmpOffset;
 			}
 
-			// replace unnecessary tags
-	        xmpData = xmpData.replace(/<\?xpacket[^>]+>/, '<?xml version="1.0" encoding="UTF-8"?>');
-	        xmpData = xmpData.replace(/<x:xmpmeta[^>]+>/, '');
-	        xmpData = xmpData.replace(/<\/x:xmpmeta>/, '');
+			// xml data repair
 	        xmpData = xmpData.replace(/"xmlns:/g, '" xmlns:');
+	        xmpData = xmpData.replace(/\n/g, '');
+
+			// replace xpacket to xml tag
+	        var repXmpData = xmpData.replace(/<\?xpacket[^>]+>/, '<?xml version="1.0" encoding="UTF-8"?>');
+			// replace unnecessary tags
+	        // repXmpData = repXmpData.replace(/<x:xmpmeta[^>]+>/, '');
+	        // repXmpData = repXmpData.replace(/<\/x:xmpmeta>/, '');
 
 			// parse xml
 			var parser = new DOMParser();
-	        var domData = parser.parseFromString(xmpData, 'text/xml');
+	        var domData = parser.parseFromString(repXmpData, 'text/xml');
 
-			return domData;
+	        xmpResult.origin = xmpData;
+	        xmpResult.xml = repXmpData;
+	        xmpResult.dom = domData;
+
+			return xmpResult;
 		}
 	};
 
