@@ -17,8 +17,8 @@ CordovaExif.readData(imageURI, function(resultObject) {
   // get exif data
   console.log(resultObject.exif);
   // get xmp data (array)
-  var xmparr = resultObject.xmp;
-  for (var i = 0; i &lt; xmparr.length; i++) {
+  let xmparr = resultObject.xmp;
+  for (let i = 0; i < xmparr.length; i++) {
     console.log(xmparr[i].origin); // xmp origin data
     console.log(xmparr[i].xml);    // convert xml data
     console.log(xmparr[i].dom);    // parse dom data
@@ -95,8 +95,8 @@ function onSuccess(imageURI) {
 		// get exif data
 		console.log(resultObject.exif);
 		// get xmp data (array)
-		var xmparr = resultObject.xmp;
-		for (var i = 0; i &lt; xmparr.length; i++) {
+		let xmparr = resultObject.xmp;
+		for (let i = 0; i < xmparr.length; i++) {
 			console.log(xmparr[i].origin); // xmp origin data
 			console.log(xmparr[i].xml);    // convert xml data
 			console.log(xmparr[i].dom);    // parse dom data
